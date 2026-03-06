@@ -151,3 +151,4 @@ continuar = "s"
 while continuar == "s":
     processar_pessoas()
     continuar = input("\nProcessar outra pessoa? (s/n): ").lower()
+exibir_cabecalho()
