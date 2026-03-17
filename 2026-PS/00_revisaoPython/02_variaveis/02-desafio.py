@@ -1,6 +1,12 @@
-# Projeto: Sistema de Controle de Estoque
-# Autor: Nickolas Kinceski Martins
-# Data: 26/02/2026
+# ====================================================
+# SISTEMA DE CONTROLE DE ESTOQUE
+# ====================================================
+# Diciplina        : Programação de Sistemas (PS)
+# Aula             : 04 - Revisão: Variáveis, Tipos de Dados e Controle de Fluxo
+# Autor            : Nickolas Kinceski Martins
+# Data (de termino): 12/03/2026
+# Repositório      : https://github.com/20251ctbNik/2026-PS
+# ===================================================
 
 print("\n______ SISTEMA DE CONTROLE DE ESTOQUE______")
 

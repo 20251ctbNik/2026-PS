@@ -1,7 +1,12 @@
-# Projeto: Calculadora Simples em Python
-# Autor: Nickolas Kinceski Martins
-# Data: 26/02/2026
-
+# ====================================================
+# CALCULADORA
+# ====================================================
+# Diciplina        : Programação de Sistemas (PS)
+# Aula             : 02 - Ambiente de Dessenvolvimento
+# Autor            : Nickolas Kinceski Martins
+# Data (de termino): 12/03/2026
+# Repositório      : https://github.com/20251ctbNik/2026-PS
+# ===================================================
 import time
 # importa as bibliotecas necessárias
 
