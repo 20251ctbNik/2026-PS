@@ -1,3 +1,65 @@
+
+# Centralizar o nome evita erros de digitação em todo o código
+ARQUIVO = "biblioteca.txt"
+SEPARADOR = "|"
+
+# Formato de cada linha no arquivo:
+#   titulo|autor|disponivel
+# Exemplo:
+#   Código Limpo|Robert C. Martin|False
+
+def carregar_catalogo():
+    """Lê o .txt e reconstrói a lista de dicionários."""
+    catalogo = []
+    try:
+        # 'r' = leitura | encoding='utf-8' garante acentos corretos
+        with open(ARQUIVO, "r", encoding="utf-8") as f:
+            for linha in f:
+                linha = linha.strip()
+                if not linha:  # ignora linhas vazias
+                    continue
+                partes = linha.split(SEPARADOR)
+                if len(partes) != 3:  # linha malformada -> pula
+                    continue
+                titulo, autor, disponivel_str = partes
+                catalogo.append({
+                    "titulo": titulo,
+                    "autor": autor,
+                    # a string "True' no arquivo precisa virar bool True
+                    "disponivel": disponivel_str == "True"
+                })
+    except FileNotFoundError:
+        pass  # primeira execução: arquivo ainda não existe
+
+    return catalogo
+
+
+def salvar_catalogo(catalogo):
+    """Grava toda a lista no arquivo .txt."""
+    try:
+        # 'w' = write: cria se não existir, sobrescreve se existir
+        with open(ARQUIVO, "w", encoding="utf-8") as f:
+            for livro in catalogo:
+                linha = f"{livro['titulo']}{SEPARADOR}{livro['autor']}{SEPARADOR}{livro['disponivel']}\n"
+                f.write(linha)
+        print(f"Catálogo salvo em '{ARQUIVO}'.")
+    except IOError as e:
+        # IOError: disco cheio, permissão negada, etc
+        print(f"Erro ao salvar: {e}")
+
+salvar_catalogo([{"titulo": "Teste", "autor": "Autor", "disponivel": True}])
+
+# Precisam chamar salvar_catalogo():
+# - adicionar_livro (altera o catálogo)
+# - registrar_emprestimo (altera o status do livro)
+# - devolver_livro (altera o status do livro)
+
+# Não precisam chamar salvar_catalogo():
+# - carregar_catalogo (apenas lê)
+# - listar_livros (apenas exibe)
+# - buscar_livro (apenas consulta)
+# - menu (apenas controla o fluxo)
+
 catalogo = [
     {"titulo": "O Programador Pragmático",      "autor": "Andrew Hunt",           "disponivel": True},
     {"titulo": "Código Limpo",                  "autor": "Robert C. Martin",     "disponivel": False},
@@ -21,8 +83,9 @@ def listar_livros():
     print("=" * 50)
 
 
-def adicionar_livro():
-    """Coleta dados via input e adiciona um novo livro ao catálogo."""
+def adicionar_livro(catalogo):
+    """Coleta dados via input e adiciona um2
+     novo livro ao catálogo."""
 
     titulo = input("Título: ").strip()
     autor = input("Autor: ").strip()
@@ -37,6 +100,7 @@ def adicionar_livro():
         "disponiel": True
     })
     print(f" '{titulo}' adicionado com sucesso!")
+    salvar_catalogo(catalogo)
 
 def buscar_livro():
     print("\n=== Buscar Livro ===")
@@ -56,6 +120,7 @@ def buscar_livro():
 
     except Exception as e:
         print(f"   Erro inesperado: {e}")
+        salvar_catalogo
 
 def registrar_emprestimo():
     listar_livros()
@@ -95,6 +160,7 @@ def devolver_livro():
         else:
             livro["disponivel"] = True
             print(f" Devoluçãon de '{livro['titulo']}' registrada")
+            salvar_catalogo
 
     # Um trata um valor com o tipo certo mas inválido. O outro trata um índice fora do aceito
     except ValueError: # Se tiver um erro no valor
@@ -103,7 +169,11 @@ def devolver_livro():
         print(" Número fora da lista. Verifique os livros cadastrados.")
 
 def menu():
-    print("\nSISTEMA DE BIBLIOTECA -v1 (em memória)")
+    # Carrega do arquivo ao iniciar - memória persistente
+    catalogo = carregar_catalogo()
+    total = len(catalogo)
+    print("\nSISTEMA DE BIBLIOTECA -v2 (com persistência)")
+    print(f" {total} livros(s) carregado(s) de '{ARQUIVO}'.")
 
     opcoes = {
         "1": ("Listar livros",          listar_livros),
@@ -133,7 +203,7 @@ def menu():
                 print("\n Até logo!")
                 break
             _, funcao = opcoes[escolha]
-            funcao()
+            funcao(catalogo)
 
         finally:
             # Execurtado SEMPRE - com s=ou sem exeção
