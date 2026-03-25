@@ -1,1 +1,4 @@
-Teste|Autor|True
+Nicko|niok|True
+Nada de Novo no Front|Erich Maria Remarque|False
+Guerra e Paz|Liev Tolstói|True
+O Diário de Anne Frank|Uma Jovem Judia|True

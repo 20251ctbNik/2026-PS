@@ -1,73 +1,58 @@
+# ===================================================================
+# Autor: Nickolas Kinceski Martins
+# Data : 24/03/2026
+# ===================================================================
 
-# Centralizar o nome evita erros de digitação em todo o código
+from datetime import datetime
+
 ARQUIVO = "biblioteca.txt"
 SEPARADOR = "|"
 
-# Formato de cada linha no arquivo:
-#   titulo|autor|disponivel
-# Exemplo:
-#   Código Limpo|Robert C. Martin|False
-
 def carregar_catalogo():
-    """Lê o .txt e reconstrói a lista de dicionários."""
     catalogo = []
     try:
-        # 'r' = leitura | encoding='utf-8' garante acentos corretos
         with open(ARQUIVO, "r", encoding="utf-8") as f:
             for linha in f:
                 linha = linha.strip()
-                if not linha:  # ignora linhas vazias
+                if not linha:
                     continue
                 partes = linha.split(SEPARADOR)
-                if len(partes) != 3:  # linha malformada -> pula
+                if len(partes) != 3:
                     continue
                 titulo, autor, disponivel_str = partes
                 catalogo.append({
                     "titulo": titulo,
                     "autor": autor,
-                    # a string "True' no arquivo precisa virar bool True
                     "disponivel": disponivel_str == "True"
                 })
     except FileNotFoundError:
-        pass  # primeira execução: arquivo ainda não existe
+        pass
 
     return catalogo
 
 
 def salvar_catalogo(catalogo):
-    """Grava toda a lista no arquivo .txt."""
     try:
-        # 'w' = write: cria se não existir, sobrescreve se existir
         with open(ARQUIVO, "w", encoding="utf-8") as f:
             for livro in catalogo:
                 linha = f"{livro['titulo']}{SEPARADOR}{livro['autor']}{SEPARADOR}{livro['disponivel']}\n"
                 f.write(linha)
         print(f"Catálogo salvo em '{ARQUIVO}'.")
     except IOError as e:
-        # IOError: disco cheio, permissão negada, etc
         print(f"Erro ao salvar: {e}")
 
-salvar_catalogo([{"titulo": "Teste", "autor": "Autor", "disponivel": True}])
 
-# Precisam chamar salvar_catalogo():
-# - adicionar_livro (altera o catálogo)
-# - registrar_emprestimo (altera o status do livro)
-# - devolver_livro (altera o status do livro)
+def registrar_historico(acao, livro):
+    try:
+        with open("historico.txt", "a", encoding="utf-8") as f:
+            data_hora = datetime.now().strftime("%d/%m/%Y %H:%M")
+            linha = f"{data_hora} - {acao}: {livro['titulo']} ({livro['autor']})\n"
+            f.write(linha)
+    except IOError as e:
+        print(f"Erro ao salvar histórico: {e}")
 
-# Não precisam chamar salvar_catalogo():
-# - carregar_catalogo (apenas lê)
-# - listar_livros (apenas exibe)
-# - buscar_livro (apenas consulta)
-# - menu (apenas controla o fluxo)
 
-catalogo = [
-    {"titulo": "O Programador Pragmático",      "autor": "Andrew Hunt",           "disponivel": True},
-    {"titulo": "Código Limpo",                  "autor": "Robert C. Martin",     "disponivel": False},
-    {"titulo": "Padrões de Projeto",            "autor": "Frich Gamma",          "disponivel": True},
-]
-
-def listar_livros():
-    """Exibe todos os livros com numeração e status."""
+def listar_livros(catalogo):
     print("\n" + "=" * 50)
     print(" CATÁLOGO DA BIBLIOTECA")
     print("=" * 50)
@@ -84,131 +69,188 @@ def listar_livros():
 
 
 def adicionar_livro(catalogo):
-    """Coleta dados via input e adiciona um2
-     novo livro ao catálogo."""
-
     titulo = input("Título: ").strip()
     autor = input("Autor: ").strip()
 
     if not titulo or not autor:
         print("Título e autor são obrigatórios.")
         return
+
+    # valida duplicata
+    if any(l["titulo"].lower() == titulo.lower() for l in catalogo):
+        print(" Livro já cadastrado.")
+        return
     
     catalogo.append({
-        "titulo":       titulo,
-        "autor":        autor,
-        "disponiel": True
+        "titulo": titulo,
+        "autor": autor,
+        "disponivel": True
     })
+
     print(f" '{titulo}' adicionado com sucesso!")
     salvar_catalogo(catalogo)
 
-def buscar_livro():
+
+def buscar_livro(catalogo):
     print("\n=== Buscar Livro ===")
     termo = input("Digite parte do título: ").strip().lower()
 
-    try:
-        resultados = [l for l in catalogo if termo in l["titulo"].lower()]
+    resultados = [l for l in catalogo if termo in l["titulo"].lower()]
 
-        if not resultados:
-            print("     Nenhum livro encontrado.")
-            return
-        
-        print(f"\n {len(resultados)} resultados(s):")
-        for livro in resultados:
-            status = "Disponível" if livro["dispinivel"] else "Emprestado"
-            print(f"   {livro['titulo'] - {livro['autor']} [status]}")
+    if not resultados:
+        print("     Nenhum livro encontrado.")
+        return
+    
+    print(f"\n {len(resultados)} resultado(s):")
+    for livro in resultados:
+        status = "Disponível" if livro["disponivel"] else "Emprestado"
+        print(f"   {livro['titulo']} - {livro['autor']} [{status}]")
 
-    except Exception as e:
-        print(f"   Erro inesperado: {e}")
-        salvar_catalogo
 
-def registrar_emprestimo():
-    listar_livros()
+def registrar_emprestimo(catalogo):
+    listar_livros(catalogo)
     if not catalogo:
         return
+
     print("\n=== Registrar Empréstimo ===")
 
     try:
-        numero = int(input("Númeor do livro: ")) # ValueError se digitar letras
+        numero = int(input("Número do livro: "))
 
         if numero < 1 or numero > len(catalogo):
-            print(f"Número fora do intervalo.")
+            print("Número fora do intervalo.")
+            return
 
-        livro = catalogo[numero - 1] # -1 porque lista começa em 0
+        livro = catalogo[numero - 1]
 
         if not livro["disponivel"]:
             print(f" '{livro['titulo']}' já está emprestado")
         else:
-            livro["disponivel"] - False
-            print(f" Empréstiumo de '{livro['titulo']}' registrado.")
+            livro["disponivel"] = False
+            print(f" Empréstimo de '{livro['titulo']}' registrado.")
+
+            registrar_historico("Empréstimo", livro)
+            salvar_catalogo(catalogo)
 
     except ValueError:
-        print(" Entrada inválida. Digite apenas o núimero.")
+        print(" Entrada inválida. Digite apenas o número.")
 
-def devolver_livro():
-    listar_livros
+
+def devolver_livro(catalogo):
+    listar_livros(catalogo)
     if not catalogo:
         return
+
     print("\n--- Registrar Devolução ---")
 
     try:
         numero = int(input("Número do livro a devolver: "))
-        livro  = catalogo[numero - 1] # IndexError se número for negativo ou > len
+        livro = catalogo[numero - 1]
 
         if livro["disponivel"]:
             print(f" '{livro['titulo']}' já está disponível.")
         else:
             livro["disponivel"] = True
-            print(f" Devoluçãon de '{livro['titulo']}' registrada")
-            salvar_catalogo
+            print(f" Devolução de '{livro['titulo']}' registrada")
 
-    # Um trata um valor com o tipo certo mas inválido. O outro trata um índice fora do aceito
-    except ValueError: # Se tiver um erro no valor
+            registrar_historico("Devolução", livro)
+            salvar_catalogo(catalogo)
+
+    except ValueError:
         print(" Digite apenas o número do livro.")
-    except IndexError: # Se ouver um índice fora do aceito
-        print(" Número fora da lista. Verifique os livros cadastrados.")
+    except IndexError:
+        print(" Número fora da lista.")
+
+
+def ver_historico():
+    print("\n=== HISTÓRICO ===")
+
+    try:
+        with open("historico.txt", "r", encoding="utf-8") as f:
+            conteudo = f.read()
+
+            if not conteudo.strip():
+                print(" Nenhuma operação registrada.")
+            else:
+                print(conteudo)
+
+    except FileNotFoundError:
+        print(" Nenhum histórico encontrado.")
+
+
+def relatorio_acervo(catalogo):
+    print("\n=== RELATÓRIO DO ACERVO ===")
+
+    total = len(catalogo)
+    disponiveis = sum(1 for l in catalogo if l["disponivel"])
+    emprestados = total - disponiveis
+
+    print(f" Total de livros: {total}")
+    print(f" Disponíveis: {disponiveis}")
+    print(f" Emprestados: {emprestados}")
+
+    try:
+        with open("historico.txt", "r", encoding="utf-8") as f:
+            linhas = f.readlines()
+
+        emprestimos = {}
+
+        for linha in linhas:
+            if "Empréstimo" in linha:
+                parte = linha.split("Empréstimo: ")[1]
+                titulo = parte.split(" (")[0]
+                emprestimos[titulo] = emprestimos.get(titulo, 0) + 1
+
+        if emprestimos:
+            mais_emprestado = max(emprestimos, key=emprestimos.get)
+            qtd = emprestimos[mais_emprestado]
+            print(f" Livro mais emprestado: {mais_emprestado} ({qtd} vezes)")
+        else:
+            print(" Nenhum empréstimo registrado ainda.")
+
+    except FileNotFoundError:
+        print(" Nenhum histórico encontrado.")
+
 
 def menu():
-    # Carrega do arquivo ao iniciar - memória persistente
     catalogo = carregar_catalogo()
-    total = len(catalogo)
-    print("\nSISTEMA DE BIBLIOTECA -v2 (com persistência)")
-    print(f" {total} livros(s) carregado(s) de '{ARQUIVO}'.")
 
-    opcoes = {
-        "1": ("Listar livros",          listar_livros),
-        "2": ("Adicionar livro",       adicionar_livro),
-        "3": ("Buscar livro",           buscar_livro),
-        "4": ("Registrar emprésimo",    registrar_emprestimo),
-        "5": ("Devolver livro",         devolver_livro),
-        "0": ("Sair",                   None)
-    }
+    print("\nSISTEMA DE BIBLIOTECA -v3 (com persistência + histórico)")
+    print(f" {len(catalogo)} livro(s) carregado(s) de '{ARQUIVO}'.")
 
     while True:
         print("\n Opções:")
-        for chave, (descricao, _) in opcoes.items():
-            print(f"    [{chave}] {descricao}")
+        print("    [1] Listar livros")
+        print("    [2] Adicionar livro")
+        print("    [3] Buscar livro")
+        print("    [4] Registrar empréstimo")
+        print("    [5] Devolver livro")
+        print("    [6] Ver histórico")
+        print("    [7] Relatório do acervo")
+        print("    [0] Sair")
 
-        try:
-            escolha = input("\n Sua escolha: ").strip()
-            if escolha not in opcoes:
-                raise ValueError(f"Opção '{escolha}' inválida.")
-        
-        except ValueError as e:
-            print(f" {e}")
-            continue # volta ao while - não executa else/finally abaixo
+        escolha = input("\n Sua escolha: ").strip()
 
-        else: # Executado SOMENTE quando try termina sem exeções
-            if escolha == "0":
-                print("\n Até logo!")
-                break
-            _, funcao = opcoes[escolha]
-            funcao(catalogo)
+        if escolha == "1":
+            listar_livros(catalogo)
+        elif escolha == "2":
+            adicionar_livro(catalogo)
+        elif escolha == "3":
+            buscar_livro(catalogo)
+        elif escolha == "4":
+            registrar_emprestimo(catalogo)
+        elif escolha == "5":
+            devolver_livro(catalogo)
+        elif escolha == "6":
+            ver_historico()
+        elif escolha == "7":
+            relatorio_acervo(catalogo)
+        elif escolha == "0":
+            print("\n Até logo!")
+            break
+        else:
+            print(" Opção inválida.")
 
-        finally:
-            # Execurtado SEMPRE - com s=ou sem exeção
-            # Aqui: didático. Em produção: fecha arquivos, conexões, etc.
-            pass
 
 if __name__ == "__main__":
     menu()
