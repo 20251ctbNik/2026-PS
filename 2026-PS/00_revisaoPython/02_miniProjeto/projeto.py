@@ -4,7 +4,6 @@
 # Descrição: Sistema para gerenciar produtos de um depósito
 # =================================================================
 
-# PARTE DO NICKOLAS
 # ================= BASE DE DADOS =================
 # Lista de dicionários que representa o estoque
 # Cada produto possui: nome, valor, quantidade e código único
@@ -138,8 +137,6 @@ def consultar_produto():
     else:
         print("❌ Produto não encontrado.")
 
- 
-# PARTE DO GUSTAVO KOLLER
 # ================= SAÍDA DE PRODUTO =================
 
 def solicitar_produto():
