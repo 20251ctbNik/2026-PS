@@ -118,4 +118,3 @@ if estoque:
 print(f"\nCORRE COMPRAR O {produto_menor['Produto']} ANTES QUE ACABE!!")
 # eNCERRAMENTO DO PROGRAMA
 print("\n______ FIM DO SISTEMA DE CONTROLE DE ESTOQUE ______")
-# Só pra dar as 100 linhas.
