@@ -32,13 +32,13 @@ def carregar_estoque():
             {"Produto": "Aston Martin Vantage", "Quantidade": 10, "Valor": 500000},
         ]
 
-        salvar_estoque(estoque)
+        salvar_estoque = (estoque)
 
     return estoque
 
 
 # ================= SALVAR ESTOQUE =================
-def salvar_estoque(estoque):
+def salvar_f4estoque(estoque):
     with open(ARQUIVO, "w", encoding="utf-8") as arquivo:
         for item in estoque:
             arquivo.write(f"{item['Produto']},{item['Quantidade']},{item['Valor']}\n")
