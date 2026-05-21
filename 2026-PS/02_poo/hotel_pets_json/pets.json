@@ -1,30 +1,29 @@
 [
     {
-        "nome": "Thor",
-        "especie": "Cachorro",
-        "idade": 4,
-        "peso": 15.3,
-        "check_in": true
-    },
-    {
-        "nome": "Luna",
-        "especie": "Gato",
-        "idade": 2,
-        "peso": 4.2,
-        "check_in": false
-    },
-    {
-        "nome": "Pipoca",
-        "especie": "Calopsita",
-        "idade": 11,
-        "peso": 0.09,
-        "check_in": true
-    },
-    {
-        "nome": "lila",
+        "nome": "Mimi",
         "especie": "gato",
-        "idade": 5,
-        "peso": 4.0,
-        "check_in": true
+        "idade": 8,
+        "peso": 1.0,
+        "nome_dono": "Nickolas",
+        "vacinado": true,
+        "hospedado": true
+    },
+    {
+        "nome": "Blue",
+        "especie": "American Bully",
+        "idade": 6,
+        "peso": 50.0,
+        "nome_dono": "Nickolas",
+        "vacinado": true,
+        "hospedado": false
+    },
+    {
+        "nome": "Dia",
+        "especie": "PAstor Alemão",
+        "idade": 14,
+        "peso": 40.0,
+        "nome_dono": "Nickolas",
+        "vacinado": true,
+        "hospedado": false
     }
 ]

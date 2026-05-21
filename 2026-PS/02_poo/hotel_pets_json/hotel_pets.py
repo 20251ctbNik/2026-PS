@@ -1,36 +1,69 @@
-import os
 import json
+import os
+
+PASTA_ATUAL = os.path.dirname(os.path.abspath(__file__))
+ARQUIVO_JSON = os.path.join(PASTA_ATUAL, "pets.json")
+
 
 class Pet:
-    def __init__(self, nome, especie, idade, peso=0.0, check_in=False):
+    def __init__(self, nome, especie, idade, peso, nome_dono, vacinado, hospedado=False):
         self.nome = nome
         self.especie = especie
         self.idade = idade
         self.peso = peso
-        self.check_in = check_in
+        self.nome_dono = nome_dono
+        self.vacinado = vacinado
+        self.hospedado = hospedado
+
+    def exibir_dados(self):
+        print("\n--- Dados do Pet ---")
+        print(f"Nome: {self.nome}")
+        print(f"Espécie: {self.especie}")
+        print(f"Idade: {self.idade} anos")
+        print(f"Peso: {self.peso:.2f} kg")
+        print(f"Dono: {self.nome_dono}")
+        print(f"Vacinado: {'Sim' if self.vacinado else 'Não'}")
+        print(f"Hospedado: {'Sim' if self.hospedado else 'Não'}")
+
+    def registrar_entrada(self):
+        if self.hospedado:
+            print(f"\n[Aviso] {self.nome} já está hospedado.")
+        else:
+            self.hospedado = True
+            print(f"\n[Sucesso] {self.nome} entrou no hotel.")
+
+    def registrar_saida(self):
+        if not self.hospedado:
+            print(f"\n[Aviso] {self.nome} não está hospedado.")
+        else:
+            self.hospedado = False
+            print(f"\n[Sucesso] {self.nome} saiu do hotel.")
 
     def para_dicionario(self):
-        """Requisito: Converte a instância do Pet em um dicionário para o JSON."""
         return {
             "nome": self.nome,
             "especie": self.especie,
             "idade": self.idade,
             "peso": self.peso,
-            "check_in": self.check_in
+            "nome_dono": self.nome_dono,
+            "vacinado": self.vacinado,
+            "hospedado": self.hospedado
         }
 
-    @classmethod
-    def de_dicionario(cls, dados):
-        """Requisito: Reconstrói o objeto Pet a partir de um dicionário vindo do JSON."""
-        return cls(
-            nome=dados["nome"],
-            especie=dados["especie"],
-            idade=dados["idade"],
-            peso=dados["peso"],
-            check_in=dados["check_in"]
+    @staticmethod
+    def criar_de_dicionario(dados):
+        return Pet(
+            dados["nome"],
+            dados["especie"],
+            dados["idade"],
+            dados["peso"],
+            dados["nome_dono"],
+            dados["vacinado"],
+            dados["hospedado"]
         )
 
-# --- FUNÇÕES DE VALIDAÇÃO DE ENTRADA ---
+
+# --- FUNÇÕES DE VALIDAÇÃO DE ENTRADA (SEGURANÇA) ---
 
 def ler_inteiro(mensagem):
     while True:
@@ -62,208 +95,156 @@ def ler_string(mensagem):
             continue
         return valor
 
-# --- BUSCA INTELIGENTE COM AUTOCOMPLETAR ---
 
-def selecionar_pet(pets, mensagem_busca):
-    """Auxiliar: ajuda a encontrar o pet por correspondência parcial de nome."""
+# ---- SISTEMA DE BUSCA INTELIGENTE / AUTOCOMPLETAR ----
+
+def selecionar_pet(lista_pets, mensagem_busca):
+    """
+    Busca pets por correspondência parcial (ex: digitar 'Li' encontra 'Luna' e 'Pipoca').
+    Se achar apenas 1, seleciona direto (autocompletar).
+    Se achar mais de um, cria um mini menu para escolha.
+    """
     termo = ler_string(mensagem_busca).lower()
-    encontrados = [pet for pet in pets if termo in pet.nome.lower()]
-    
+    encontrados = [pet for pet in lista_pets if termo in pet.nome.lower()]
+
     if not encontrados:
-        print(f"Nenhum pet encontrado com o termo '{termo}'.")
+        print(f"\nNenhum pet encontrado com o termo '{termo}'.")
         return None
-        
+
+    # Cenário 1: Autocompleta se encontrar apenas um
     if len(encontrados) == 1:
         pet_escolhido = encontrados[0]
-        print(f"[Sistema] Pet selecionado automaticamente: {pet_escolhido.nome} ({pet_escolhido.especie})")
+        print(f"\n[Sistema] Pet selecionado automaticamente: {pet_escolhido.nome} ({pet_escolhido.especie})")
         return pet_escolhido
-        
-    print(f"\nForam encontrados {len(encontrados)} pets para o termo '{termo}':")
-    for idx, pet in enumerate(encontrados, start=1):
-        print(f"{idx} - {pet.nome} ({pet.especie})")
-        
+
+    # Cenário 2: Múltiplas opções encontradas (cria um mini menu focado)
+    print(f"\nForam encontrados {len(encontrados)} pets compatíveis:")
+    for idx, pet in enumerate(encontrados, 1):
+        print(f"{idx} - {pet.nome} ({pet.especie} | Dono: {pet.nome_dono})")
+
     while True:
         opcao = ler_inteiro(f"Escolha o número do pet desejado (1 a {len(encontrados)}): ")
         if 1 <= opcao <= len(encontrados):
             return encontrados[opcao - 1]
         print(f"Opção inválida! Digite um número entre 1 e {len(encontrados)}.")
 
-# --- MENU PRINCIPAL ---
 
-def menu(pets):
-    carregar_de_json(pets)
+# --- FUNÇÕES DE PERSISTÊNCIA ----
+
+def salvar_pets(lista_pets):
+    lista_dicionarios = []
+    for pet in lista_pets:
+        lista_dicionarios.append(pet.para_dicionario())
+
+    try:
+        with open(ARQUIVO_JSON, "w", encoding="utf-8") as arquivo:
+            json.dump(lista_dicionarios, arquivo, ensure_ascii=False, indent=4)
+        print("\nDados salvos com sucesso em pets.json!")
+    except Exception as e:
+        print(f"\nErro ao salvar o arquivo: {e}")
+
+
+def carregar_pets():
+    if not os.path.exists(ARQUIVO_JSON):
+        return []
+
+    try:
+        with open(ARQUIVO_JSON, "r", encoding="utf-8") as arquivo:
+            lista_dicionarios = json.load(arquivo)
+
+        lista_pets = []
+        for dados in lista_dicionarios:
+            pet = Pet.criar_de_dicionario(dados)
+            lista_pets.append(pet)
+        return lista_pets
+    except Exception as e:
+        print(f"Erro ao carregar o arquivo pets.json: {e}")
+        return []
+
+
+# --- INTERFACES DO MENU --
+
+def cadastrar_pet(lista_pets):
+    print("\n--- Cadastro de Pet ---")
+    nome = ler_string("Nome do pet: ")
+    especie = ler_string("Espécie: ")
+    idade = ler_inteiro("Idade: ")
+    peso = ler_float("Peso (kg): ")
+    nome_dono = ler_string("Nome do dono: ")
+
+    resposta = input("O pet está vacinado? (s/n): ").strip().lower()
+    vacinado = resposta == "s"
+
+    pet = Pet(nome, especie, idade, peso, nome_dono, vacinado)
+    lista_pets.append(pet)
+    salvar_pets(lista_pets)  # Autosave por segurança
+    print("Pet cadastrado com sucesso!")
+
+
+def listar_pets(lista_pets):
+    print("\n--- Lista de Pets ---")
+    if not lista_pets:
+        print("Nenhum pet cadastrado.")
+        return
+
+    for i, pet in enumerate(lista_pets, 1):
+        print(f"\nID #{i}:")
+        pet.exibir_dados()
+
+
+def buscar_especifico(lista_pets):
+    print("\n--- Buscar Pet ---")
+    pet = selecionar_pet(lista_pets, "Digite o nome (ou parte do nome) do pet: ")
+    if pet:
+        pet.exibir_dados()
+
+
+def menu():
+    pets = carregar_pets()
 
     while True:
-        print("\n============= Hotel Pet =============")
-        print("1  - Cadastrar um Pet.")
-        print("2  - Listar os Pets.")
-        print("3  - Calcular a diária do pet.")
-        print("4  - Atualizar peso do pet.")
-        print("5  - Check-in.")
-        print("6  - Check-out.")
-        print("7  - Buscar por pet.")
-        print("8  - Relatório de pets hospedados.")
-        print("9  - Resumo individual do pet.")
-        print("10 - Sair.")
-        print("====================================")
+        print("\n========= HOTEL PARA PETS =========")
+        print("1 - Cadastrar pet")
+        print("2 - Listar todos os pets")
+        print("3 - Registrar entrada (Check-in)")
+        print("4 - Registrar saída (Check-out)")
+        print("5 - Buscar pet por nome")
+        print("6 - Salvar dados")
+        print("0 - Sair")
         opcao = input("Escolha uma opção: ").strip()
 
         if opcao == "1":
-            cadastrar(pets)
+            cadastrar_pet(pets)
+
         elif opcao == "2":
-            listar_pet(pets)
+            listar_pets(pets)
+
         elif opcao == "3":
-            calcular_diaria(pets)
+            pet = selecionar_pet(pets, "Digite o nome (ou parte) para Check-in: ")
+            if pet:
+                pet.registrar_entrada()
+                salvar_pets(pets)  # Grava a alteração de status no JSON
+
         elif opcao == "4":
-            atualizar_peso(pets)
+            pet = selecionar_pet(pets, "Digite o nome (ou parte) para Check-out: ")
+            if pet:
+                pet.registrar_saida()
+                salvar_pets(pets)  # Grava a alteração de status no JSON
+
         elif opcao == "5":
-            registrar_entrada(pets)
+            buscar_especifico(pets)
+
         elif opcao == "6":
-            registrar_saida(pets)
-        elif opcao == "7":
-            buscar_pet(pets)
-        elif opcao == "8":
-            relatorio_pets(pets)
-        elif opcao == "9":
-            resumo_individual(pets)
-        elif opcao == "10":
-            salvar_em_json(pets)  
-            print("Dados salvos com sucesso. Saindo do programa. Até mais!")
+            salvar_pets(pets)
+
+        elif opcao == "0":
+            salvar_pets(pets)
+            print("Sistema encerrado com segurança.")
             break
+
         else:
-            print("\nOpção inválida. Tente novamente com um número de 1 a 10.")
+            print("Opção inválida.")
 
-"""======================================= Funções do Sistema ========================================================"""
-
-def cadastrar(pets):
-    print("\n--- Cadastro de Pet ---")
-    nome = ler_string("Digite o nome do pet: ")
-    especie = ler_string("Digite a espécie do pet: ")
-    idade = ler_inteiro("Digite a idade do pet (anos): ")
-    peso = ler_float("Digite o peso do pet (kg): ")
-    
-    pet = Pet(nome, especie, idade, peso)
-    pets.append(pet)
-    salvar_em_json(pets)
-    print(f"\nPet '{nome}' cadastrado e salvo com sucesso!")
-
-def listar_pet(pets):
-    if not pets:
-        print("\nNenhum pet cadastrado.")
-        return
-    print("\nLista de Pets Cadastrados:")
-    for idx, pet in enumerate(pets, start=1):
-        print(f"{idx}. Nome: {pet.nome} | Espécie: {pet.especie} | Idade: {pet.idade} anos | Peso: {pet.peso:.2f} kg")
-
-def atualizar_peso(pets):
-    pet = selecionar_pet(pets, "Digite o nome (ou parte do nome) do pet para atualizar o peso: ")
-    if pet:
-        novo_peso = ler_float(f"Digite o novo peso para {pet.nome} (kg): ")
-        pet.peso = novo_peso
-        salvar_em_json(pets)
-        print(f"Peso do pet '{pet.nome}' atualizado para {novo_peso:.2f} kg.")
-
-def registrar_entrada(pets):
-    pet = selecionar_pet(pets, "Digite o nome (ou parte do nome) do pet para check-in: ")
-    if pet:
-        if pet.check_in:
-            print(f"O pet '{pet.nome}' já está hospedado.")
-            return
-        pet.check_in = True
-        salvar_em_json(pets)
-        print(f"Pet '{pet.nome}' fez check-in com sucesso!")
-
-def registrar_saida(pets):
-    pet = selecionar_pet(pets, "Digite o nome (ou parte do nome) do pet para check-out: ")
-    if pet:
-        if not pet.check_in:
-            print(f"O pet '{pet.nome}' não está hospedado no momento.")
-            return
-        pet.check_in = False
-        salvar_em_json(pets)
-        print(f"Pet '{pet.nome}' fez check-out com sucesso!")
-
-def buscar_pet(pets):
-    pet = selecionar_pet(pets, "Digite o nome (ou parte do nome) para buscar: ")
-    if pet:
-        status = "Presente" if pet.check_in else "Saiu/Não hospedado"
-        print(f"\nResultados da Busca:")
-        print(f"- Nome: {pet.nome} | Espécie: {pet.especie} | Idade: {pet.idade} anos | Peso: {pet.peso:.2f} kg [{status}]")
-
-def relatorio_pets(pets):
-    hospedados = [pet for pet in pets if pet.check_in]
-    if not hospedados:
-        print("\nNenhum pet hospedado no momento.")
-        return
-    print("\nRelatório de Pets Hospedados:")
-    for pet in hospedados:
-        print(f"Nome: {pet.nome}, Espécie: {pet.especie}, Idade: {pet.idade} anos, Peso: {pet.peso:.2f} kg")
-        
-def resumo_individual(pets):
-    pet = selecionar_pet(pets, "Digite o nome (ou parte do nome) do pet para resumo individual: ")
-    if pet:
-        print(f"\n{'='*40}")
-        print(f"Resumo do Pet '{pet.nome}'")
-        print(f"{'='*40}")
-        print(f"Espécie: {pet.especie}")
-        print(f"Idade: {pet.idade} anos")
-        print(f"Peso: {pet.peso:.2f} kg")
-        status = "Hospedado" if pet.check_in else "Não hospedado"
-        print(f"Status: {status}")
-        print(f"{'='*40}\n")
-
-def calcular_diaria(pets):
-    pet = selecionar_pet(pets, "Digite o nome (ou parte do nome) do pet para calcular a diária: ")
-    if pet:
-        idade = pet.idade
-        if idade <= 3:
-            valor = 50.00
-        elif 4 <= idade <= 10:
-            valor = 60.00
-        else:
-            valor = 75.00
-            
-        print(f"O valor da diária para o pet '{pet.nome}' (Idade: {idade} anos) é: R$ {valor:.2f}")
-
-"""======================= PERSISTÊNCIA EM JSON ==============================="""
-
-# Procura a pasta real onde o script .py está guardado no seu disco
-PASTA_ATUAL = os.path.dirname(os.path.abspath(__file__))
-# Junta a pasta encontrada com o nome do arquivo, forçando a criação no local certo
-CAMINHO_JSON = os.path.join(PASTA_ATUAL, "pets.json")
-
-def criar_dados_iniciais():
-    return [
-        Pet("Thor", "Cachorro", 4, 15.3, True),
-        Pet("Luna", "Gato", 2, 4.2, False), 
-        Pet("Pipoca", "Calopsita", 11, 0.09, True) 
-    ]
-
-def salvar_em_json(pets):
-    try:
-        lista_dicts = [pet.para_dicionario() for pet in pets]
-        with open(CAMINHO_JSON, "w", encoding="utf-8") as file:
-            json.dump(lista_dicts, file, indent=4, ensure_ascii=False)
-    except Exception as e:
-        print(f"Erro ao salvar pets.json: {e}")
-
-def carregar_de_json(pets):
-    if not os.path.exists(CAMINHO_JSON):
-        print("Arquivo 'pets.json' não encontrado. Gerando base inicial nesta pasta...")
-        pets_iniciais = criar_dados_iniciais()
-        salvar_em_json(pets_iniciais)
-        pets.extend(pets_iniciais)
-        return
-
-    try:
-        with open(CAMINHO_JSON, "r", encoding="utf-8") as file:
-            lista_dicts = json.load(file)
-            for dados in lista_dicts:
-                pet = Pet.de_dicionario(dados)
-                pets.append(pet)
-    except Exception as e:
-        print(f"Erro ao carregar pets.json: {e}")
 
 if __name__ == "__main__":
-    lista_pets = []
-    menu(lista_pets)
+    menu()
