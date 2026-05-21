@@ -121,24 +121,13 @@ class Pet:
             print(f"{self.nome} não está hospedado.")
 
     def calcular_diaria(self):
-        '''
-        Calcula o valor da diária do pet.
-
-        ATIVIDADE:
-        Implemente uma regra simples para calcular a diária.
-
-        Sugestão:
-        - Pet com idade até 3 anos: R$ 50,00
-        - Pet com idade entre 4 e 10 anos: R$ 60,00
-        - Pet com mais de 10 anos: R$ 75,00
-
-        Este método deve retornar o valor da diária.
-        '''
 
         if self.idade <= 3:
             return 50.00
         elif 4 <= self.idade <= 10:
             return 60.00
+        elif self.idade > 30:
+            return ("Pet velho demais para ser real.")
         else:
             return 75.00
 

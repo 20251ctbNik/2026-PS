@@ -1,0 +1,30 @@
+[
+    {
+        "nome": "Thor",
+        "especie": "Cachorro",
+        "idade": 4,
+        "peso": 15.3,
+        "check_in": true
+    },
+    {
+        "nome": "Luna",
+        "especie": "Gato",
+        "idade": 2,
+        "peso": 4.2,
+        "check_in": false
+    },
+    {
+        "nome": "Pipoca",
+        "especie": "Calopsita",
+        "idade": 11,
+        "peso": 0.09,
+        "check_in": true
+    },
+    {
+        "nome": "lila",
+        "especie": "gato",
+        "idade": 5,
+        "peso": 4.0,
+        "check_in": true
+    }
+]
