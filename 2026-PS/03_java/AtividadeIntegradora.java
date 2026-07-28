@@ -7,7 +7,7 @@ public class AtividadeIntegradora {
         double[] notasTurma = {7.0, 5.0, 9.0, 6.0};
         System.out.println("--- 📊 BOLETIM DA TURMA ---");
         exibirBoletim(notasTurma);
-        
+
         System.out.println("\n--- 🧩 TESTE DO EXERCÍCIO 4 (SOBRECARGA) ---");
         System.out.println("Maior entre 12 e 7: " + maiorValor(12, 7));
         System.out.println("Maior no array {3, 9, 5}: " + maiorValor(new int[]{3, 9, 5}));
@@ -83,7 +83,7 @@ public class AtividadeIntegradora {
         return acima;
     }
 
-    // 🧩 Exercício 5 — Boletim Integrador
+    // 🧩 Exercício 5 — Boletim Integrador  bdfggrgrgrrg'1''''''''''''''''                                              weve h hr    '
     static void exibirBoletim(double[] notas) {
         double media = calcularMedia(notas);     // Reaproveita o Ex 1
         int aprovados = contarAprovados(notas); // Reaproveita o Ex 2
