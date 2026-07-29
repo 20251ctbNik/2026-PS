@@ -6,6 +6,8 @@
 public class Produto {
 
     // ===================== ATRIBUTOS PRIVADOS =====================
+    // Tudo privado porque ninguém de fora deveria poder mudar esses valores
+    // sem passar pelas regras de validação. É basicamente o coração do encapsulamento aqui.
     private String nome;
     private String codigo;
     private double preco;
@@ -13,8 +15,11 @@ public class Produto {
 
     // ===================== CONSTRUTOR COMPLETO =====================
     public Produto(String nome, String codigo, double preco, int quantidadeEstoque) {
-        // Aplica as mesmas validações usadas nos setters,
-        // para garantir que nenhum objeto nasça em estado inválido.
+        // Reaproveito as mesmas validações dos setters aqui no construtor,
+        // porque não faz sentido um objeto "nascer" já em estado inválido.
+        // Se algo estiver errado, prefiro estourar exceção logo de cara
+        // (diferente dos setters, que só devolvem false — aqui na criação
+        // não tem como "recusar silenciosamente", o objeto não pode nem existir).
         if (!validarNome(nome)) {
             throw new IllegalArgumentException("Nome do produto não pode ser vazio.");
         }
@@ -35,30 +40,41 @@ public class Produto {
     }
 
     // ============ CONSTRUTOR ALTERNATIVO (desafio complementar) ============
-    // Cria um produto novo com estoque zerado, exigindo apenas nome, código e preço.
+    // Ideia: às vezes eu só quero cadastrar um produto novo que ainda nem
+    // chegou no estoque. Em vez de obrigar a informar quantidade toda vez,
+    // esse construtor assume estoque 0 e delega pro construtor completo
+    // (assim as validações continuam valendo do mesmo jeito).
     public Produto(String nome, String codigo, double preco) {
         this(nome, codigo, preco, 0);
     }
 
     // ===================== VALIDAÇÕES (mínimo 3) =====================
+    // São private porque são detalhe interno de implementação — quem usa
+    // a classe não precisa (nem deveria) chamar isso diretamente.
+
     private boolean validarNome(String nome) {
+        // Nome não pode ser nulo nem só espaços em branco disfarçados de texto
         return nome != null && !nome.trim().isEmpty();
     }
 
     private boolean validarCodigo(String codigo) {
+        // Mesma lógica do nome: código é a "identidade" do produto, não pode vir vazio
         return codigo != null && !codigo.trim().isEmpty();
     }
 
     private boolean validarPreco(double preco) {
+        // Preço negativo não existe no mundo real, então bloqueio aqui
         return preco >= 0;
     }
 
     private boolean validarQuantidade(int quantidade) {
+        // Estoque negativo também não faz sentido nenhum
         return quantidade >= 0;
     }
 
     // ===================== GETTERS =====================
-    // Apenas para dados que realmente precisam ser consultados de fora.
+    // Só criei getter pros campos que realmente precisam ser consultados
+    // de fora da classe (pra imprimir, comparar, etc).
     public String getNome() {
         return nome;
     }
@@ -76,8 +92,10 @@ public class Produto {
     }
 
     // ===================== SETTERS =====================
-    // Só existem onde alteração direta faz sentido (nome e código, por exemplo,
-    // não têm setter pois representam identidade do produto e não devem mudar livremente).
+    // Só tem setter pra preço e estoque, porque esses dois realmente mudam
+    // com o tempo (promoção, entrada/saída de mercadoria). Nome e código eu
+    // decidi não deixar mudar depois de criado — se mudar, na prática vira
+    // outro produto, não faz sentido "editar" a identidade dele.
 
     /**
      * Altera o preço do produto, validando que não seja negativo.
@@ -85,7 +103,7 @@ public class Produto {
      */
     public boolean setPreco(double novoPreco) {
         if (!validarPreco(novoPreco)) {
-            return false;
+            return false; // recusa educadamente em vez de quebrar o programa
         }
         this.preco = novoPreco;
         return true;
@@ -112,10 +130,10 @@ public class Produto {
      */
     public boolean venderUnidades(int quantidade) {
         if (quantidade <= 0) {
-            return false; // não faz sentido vender quantidade zero ou negativa
+            return false; // vender 0 ou quantidade negativa não faz sentido nenhum
         }
         if (quantidade > this.quantidadeEstoque) {
-            return false; // estoque insuficiente: operação impossível
+            return false; // não posso vender mais do que eu tenho, óbvio
         }
         this.quantidadeEstoque -= quantidade;
         return true;
@@ -128,7 +146,7 @@ public class Produto {
      */
     public boolean aplicarDesconto(double percentual) {
         if (percentual < 0 || percentual > 100) {
-            return false;
+            return false; // desconto negativo ou acima de 100% não existe
         }
         this.preco = this.preco - (this.preco * (percentual / 100));
         return true;
@@ -136,7 +154,8 @@ public class Produto {
 
     // ===================== DESAFIOS COMPLEMENTARES =====================
 
-    // Desafio 1: método que retorna um resumo textual do objeto.
+    // Desafio 1: um jeito rápido de mostrar o estado do objeto inteiro
+    // sem precisar ficar chamando getter por getter toda vez que eu quiser imprimir.
     public String resumo() {
         return String.format(
             "Produto[codigo=%s, nome=%s, preco=R$ %.2f, estoque=%d un.]",
@@ -144,7 +163,8 @@ public class Produto {
         );
     }
 
-    // Desafio 2: método que compara dois produtos da mesma classe pelo preço.
+    // Desafio 2: comparo dois produtos pelo preço, pra poder responder
+    // "qual é mais barato" sem precisar acessar o atributo preco direto de fora.
     // Retorna negativo se este produto é mais barato, positivo se mais caro, 0 se igual.
     public int compararPorPreco(Produto outro) {
         return Double.compare(this.preco, outro.preco);
