@@ -25,11 +25,11 @@ public class Emprestimo {
             return false;
         }
 
-        livro.emprestar();
-        leitor.pegouLivro();
-        dataRetirada = LocalDate.now();
-        dataDevolucao = null;
-        ativo = true;
+        livro.setDisponivel(false);  // Marca o livro como indisponível
+        leitor.adicionarLivro();     // Incrementa os livros em mãos do leitor
+        this.dataRetirada = LocalDate.now();
+        this.dataDevolucao = null;
+        this.ativo = true;
         return true;
     }
 
