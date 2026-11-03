@@ -2,14 +2,13 @@
  * Disciplina: 2026-PS
  * Projeto   : bibliotech
  * Arquivo   : Leitor.java
- * Autor     : seu nome
+ * Autor     : Nickolas Kinceski Martins
  * Descricao : Leitor E UM TIPO DE Usuario: herda nome, matricula e entrar().
  */
 public class Leitor extends Usuario {
 
-    // So o que a caixa Leitor acrescenta. Nome e matricula ja vem de Usuario.
     private int limiteEmprestimos;
-    private int livrosEmMaos;   // nao estava na caixa: o codigo pediu
+    private int livrosEmMaos;
 
     public Leitor(String nome, String matricula, int limiteEmprestimos) {
         super(nome, matricula);
@@ -25,18 +24,23 @@ public class Leitor extends Usuario {
         return livrosEmMaos;
     }
 
-    // OPERACAO DA CAIXA: podePegarEmprestado().
     public boolean podePegarEmprestado() {
         return livrosEmMaos < limiteEmprestimos;
     }
 
-    // Os dois metodos que o emprestimo vai usar na Aula 38.
     public void pegouLivro() {
         this.livrosEmMaos = this.livrosEmMaos + 1;
     }
 
+    // Compatibilidade com a classe Emprestimo
+    public void adicionarLivro() {
+        pegouLivro();
+    }
+
     public void devolveuLivro() {
-        this.livrosEmMaos = this.livrosEmMaos - 1;
+        if (this.livrosEmMaos > 0) {
+            this.livrosEmMaos = this.livrosEmMaos - 1;
+        }
     }
 
     @Override

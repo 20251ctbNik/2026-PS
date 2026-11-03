@@ -9,9 +9,7 @@ public class Emprestimo {
 
     public Emprestimo(Livro livro, Leitor leitor) {
         if (livro == null || leitor == null) {
-            throw new IllegalArgumentException(
-                "Livro e leitor sao obrigatorios."
-            );
+            throw new IllegalArgumentException("Livro e leitor sao obrigatorios.");
         }
 
         this.livro = livro;
@@ -20,13 +18,12 @@ public class Emprestimo {
     }
 
     public boolean realizarEmprestimo() {
-        if (ativo || !livro.estaDisponivel()
-                  || !leitor.podePegarEmprestado()) {
+        if (ativo || !livro.estaDisponivel() || !leitor.podePegarEmprestado()) {
             return false;
         }
 
-        livro.setDisponivel(false);  // Marca o livro como indisponível
-        leitor.adicionarLivro();     // Incrementa os livros em mãos do leitor
+        livro.setDisponivel(false);
+        leitor.adicionarLivro();
         this.dataRetirada = LocalDate.now();
         this.dataDevolucao = null;
         this.ativo = true;
@@ -68,13 +65,10 @@ public class Emprestimo {
     @Override
     public String toString() {
         if (dataRetirada == null) {
-            return "Emprestimo ainda nao realizado: "
-                 + livro.getTitulo();
+            return "Emprestimo ainda nao realizado: " + livro.getTitulo();
         }
 
-        String situacao = ativo
-            ? "ativo"
-            : "devolvido em " + dataDevolucao;
+        String situacao = ativo ? "ativo" : "devolvido em " + dataDevolucao;
 
         return livro.getTitulo() + " para "
              + leitor.getNome()

@@ -3,25 +3,37 @@
  * Projeto   : bibliotech
  * Arquivo   : Livro.java
  * Autor     : Nickolas Kinceski Martins
- * Descricao : a caixa "livro" do diagrama de classes, em Java (aula37)
  */
 public class Livro {
 
-    // ATRIBUTOS: a faixa do meio da caixa, um por linha, todos private.
+    private int id;
     private String titulo;
     private String autor;
     private int ano;
-    private boolean disponivel;     // nao estava na caixa: o codigo pediu
+    private boolean disponivel;
 
-    // CONSTRUTOR: preenche a ficha do livro no momento "new".
+    // Construtor com ID (para buscas e listagens do banco)
+    public Livro(int id, String titulo, String autor, int ano) {
+        this.id = id;
+        this.titulo = titulo;
+        this.autor = autor;
+        this.ano = ano;
+        this.disponivel = true;
+    }
+
+    // Construtor sem ID (para novos cadastros)
     public Livro(String titulo, String autor, int ano) {
         this.titulo = titulo;
         this.autor = autor;
         this.ano = ano;
-        this.disponivel = true; // todo livro nasce na estante
+        this.disponivel = true;
     }
 
-    // GETTERS: as janelas de leitura.
+    // GETTERS & SETTERS
+    public int getId() {
+        return id;
+    }
+
     public String getTitulo() {
         return titulo;
     }
@@ -34,12 +46,14 @@ public class Livro {
         return ano;
     }
 
-    // OPERACAO DA CAIXA: estaDisponivel(), a faixa de baixo do diagrama.
     public boolean estaDisponivel() {
         return disponivel;
     }
 
-    // Os dois metodos que o emprestimo vai usar na aula 38.
+    public void setDisponivel(boolean disponivel) {
+        this.disponivel = disponivel;
+    }
+
     public void emprestar() {
         this.disponivel = false;
     }
@@ -48,10 +62,9 @@ public class Livro {
         this.disponivel = true;
     }
 
-    // toString: como a ficha se apresenta (Aula 34).
     @Override
     public String toString() {
         String situacao = disponivel ? "disponivel" : "emprestado";
-        return titulo + " (" + autor + ", " + ano + ") - " + situacao;
+        return id + " - " + titulo + " (" + autor + ", " + ano + ") - " + situacao;
     }
 }
