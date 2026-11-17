@@ -7,6 +7,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -174,20 +175,17 @@ public class TelaLivros extends JFrame {
         tabela.setSelectionBackground(new Color(204, 224, 245));
         tabela.setSelectionForeground(Color.BLACK);
 
-        // Larguras das colunas
         tabela.getColumnModel().getColumn(0).setMaxWidth(60);
         tabela.getColumnModel().getColumn(1).setPreferredWidth(80);
         tabela.getColumnModel().getColumn(1).setMaxWidth(90);
         tabela.getColumnModel().getColumn(4).setMaxWidth(80);
 
-        // Cabeçalho estilizado
         JTableHeader cabecalho = tabela.getTableHeader();
         cabecalho.setBackground(COR_PRIMARIA);
         cabecalho.setForeground(Color.WHITE);
         cabecalho.setFont(FONTE_NEGRITO);
         cabecalho.setPreferredSize(new Dimension(cabecalho.getWidth(), 34));
 
-        // Centralização e linhas zebradas para colunas de texto
         DefaultTableCellRenderer renderTexto = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -217,6 +215,10 @@ public class TelaLivros extends JFrame {
         if (opcao == JFileChooser.APPROVE_OPTION) {
             File arquivoOrigem = chooser.getSelectedFile();
             try {
+                if (!arquivoOrigem.exists() || !arquivoOrigem.isFile()) {
+                    throw new IOException("O arquivo selecionado não existe ou não é válido.");
+                }
+
                 File pastaDestino = new File("imagens/livros");
                 if (!pastaDestino.exists()) {
                     pastaDestino.mkdirs();
@@ -233,48 +235,80 @@ public class TelaLivros extends JFrame {
                 lblPreviewCapa.setText("");
                 status.setText("Capa selecionada: " + caminhoCapaSelecionada);
 
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Erro ao copiar imagem: " + ex.getMessage(),
-                        "Erro", JOptionPane.ERROR_MESSAGE);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Não foi possível salvar a imagem selecionada.\nVerifique se o arquivo é uma imagem válida.",
+                    "Erro de Arquivo",
+                    JOptionPane.ERROR_MESSAGE
+                );
             }
         }
     }
 
     private void salvarNovoLivro() {
-        String titulo = campoTitulo.getText().trim();
-        String autor = campoAutor.getText().trim();
-        String anoStr = campoAno.getText().trim();
-
-        if (titulo.isEmpty() || autor.isEmpty() || anoStr.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Preencha título, autor e ano.");
-            return;
-        }
-
-        int ano;
         try {
-            ano = Integer.parseInt(anoStr);
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Informe um ano válido.");
-            return;
-        }
+            String titulo = campoTitulo.getText().trim();
+            String autor = campoAutor.getText().trim();
+            String anoStr = campoAno.getText().trim();
 
-        if (dao.adicionarLivro(titulo, autor, ano, caminhoCapaSelecionada)) {
-            JOptionPane.showMessageDialog(this, "Livro cadastrado com sucesso!");
-            limparFormularioCadastro();
-            carregarLivros();
-        } else {
-            JOptionPane.showMessageDialog(this, "Erro ao salvar livro no banco.", "Erro", JOptionPane.ERROR_MESSAGE);
+            if (anoStr.isEmpty()) {
+                throw new NumberFormatException();
+            }
+
+            int ano = Integer.parseInt(anoStr);
+
+            // Valida regras de negócio (lança LivroInvalidoException se inválido)
+            ValidadorLivro.validar(titulo, autor, ano);
+
+            // Desafio 1: Impede cadastro duplicado de mesmo título e autor
+            if (dao.existeLivro(titulo, autor)) {
+                throw new LivroInvalidoException("Já existe um livro cadastrado com este título e autor.");
+            }
+
+            if (dao.adicionarLivro(titulo, autor, ano, caminhoCapaSelecionada)) {
+                JOptionPane.showMessageDialog(this, "Livro cadastrado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                limparFormularioCadastro();
+                carregarLivros();
+            } else {
+                JOptionPane.showMessageDialog(this, "Não foi possível concluir o cadastro.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            }
+
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(
+                this,
+                "O ano deve ser um número inteiro válido.",
+                "Entrada Inválida",
+                JOptionPane.WARNING_MESSAGE
+            );
+        } catch (LivroInvalidoException ex) {
+            JOptionPane.showMessageDialog(
+                this,
+                ex.getMessage(),
+                "Dados do Livro Inválidos",
+                JOptionPane.WARNING_MESSAGE
+            );
+        } catch (PersistenciaException ex) {
+            System.err.println(ex.getMessage());
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(
+                this,
+                "Não foi possível salvar o livro no banco de dados.\nVerifique a conexão com o MariaDB.",
+                "Erro de Conexão",
+                JOptionPane.ERROR_MESSAGE
+            );
         }
     }
 
     private void atualizarCapaLivroSelecionado() {
         int linha = tabela.getSelectedRow();
         if (linha == -1) {
-            JOptionPane.showMessageDialog(this, "Selecione um livro na tabela primeiro.");
+            JOptionPane.showMessageDialog(this, "Selecione um livro na tabela primeiro.", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
         if (caminhoCapaSelecionada == null) {
-            JOptionPane.showMessageDialog(this, "Clique em 'Selecionar Capa...' antes de vincular.");
+            JOptionPane.showMessageDialog(this, "Clique em 'Selecionar Capa...' antes de vincular.", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -283,10 +317,21 @@ public class TelaLivros extends JFrame {
         String autor = (String) modelo.getValueAt(linha, 3);
         int ano = (int) modelo.getValueAt(linha, 4);
 
-        if (dao.atualizarLivro(id, titulo, autor, ano, caminhoCapaSelecionada)) {
-            JOptionPane.showMessageDialog(this, "Capa associada ao livro '" + titulo + "'!");
-            limparFormularioCadastro();
-            carregarLivros();
+        try {
+            if (dao.atualizarLivro(id, titulo, autor, ano, caminhoCapaSelecionada)) {
+                JOptionPane.showMessageDialog(this, "Capa associada ao livro '" + titulo + "'!");
+                limparFormularioCadastro();
+                carregarLivros();
+            }
+        } catch (PersistenciaException ex) {
+            System.err.println(ex.getMessage());
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(
+                this,
+                "Não foi possível atualizar a capa no banco.\nVerifique a conexão com o MariaDB.",
+                "Erro de Conexão",
+                JOptionPane.ERROR_MESSAGE
+            );
         }
     }
 
@@ -310,16 +355,26 @@ public class TelaLivros extends JFrame {
     }
 
     private void carregarLivros() {
-        modelo.setRowCount(0);
-        List<Livro> livros = dao.listarLivros();
+        try {
+            List<Livro> livros = dao.listarLivros();
+            modelo.setRowCount(0);
 
-        if (livros != null) {
             for (Livro livro : livros) {
                 adicionarLinha(livro);
             }
-            status.setText("Livros apresentados: " + livros.size());
-        } else {
-            status.setText("Erro ao carregar livros do banco.");
+            status.setText("Livros encontrados: " + livros.size());
+
+        } catch (PersistenciaException e) {
+            status.setText("Erro ao consultar o banco.");
+            System.err.println(e.getMessage());
+            e.printStackTrace();
+
+            JOptionPane.showMessageDialog(
+                this,
+                "Não foi possível carregar os livros.\nVerifique a conexão com o MariaDB.",
+                "Erro de conexão",
+                JOptionPane.ERROR_MESSAGE
+            );
         }
     }
 
@@ -340,21 +395,49 @@ public class TelaLivros extends JFrame {
 
         try {
             id = Integer.parseInt(texto);
-            if (id <= 0) throw new NumberFormatException();
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Informe um ID inteiro positivo.", "Entrada inválida", JOptionPane.WARNING_MESSAGE);
+            if (id <= 0) {
+                throw new IllegalArgumentException("O ID deve ser positivo.");
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(
+                this,
+                "Informe um número inteiro válido.",
+                "Entrada inválida",
+                JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        } catch (IllegalArgumentException e) {
+            JOptionPane.showMessageDialog(
+                this,
+                e.getMessage(),
+                "Entrada inválida",
+                JOptionPane.WARNING_MESSAGE
+            );
             return;
         }
 
-        Livro livro = dao.buscarLivroPorId(id);
-        modelo.setRowCount(0);
+        try {
+            Livro livro = dao.buscarLivroPorId(id);
+            modelo.setRowCount(0);
 
-        if (livro == null) {
-            status.setText("Nenhum livro encontrado para o ID " + id);
-            JOptionPane.showMessageDialog(this, "Livro não encontrado.", "Aviso", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            adicionarLinha(livro);
-            status.setText("Livro encontrado: " + livro.getTitulo() + " (Total: 1)");
+            if (livro == null) {
+                status.setText("Nenhum livro encontrado para o ID " + id);
+                JOptionPane.showMessageDialog(this, "Livro não encontrado.", "Aviso", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                adicionarLinha(livro);
+                status.setText("Livro encontrado: " + livro.getTitulo() + " (Total: 1)");
+            }
+        } catch (PersistenciaException e) {
+            status.setText("Erro ao consultar o banco.");
+            System.err.println(e.getMessage());
+            e.printStackTrace();
+
+            JOptionPane.showMessageDialog(
+                this,
+                "Não foi possível buscar o livro.\nVerifique a conexão com o MariaDB.",
+                "Erro de conexão",
+                JOptionPane.ERROR_MESSAGE
+            );
         }
     }
 

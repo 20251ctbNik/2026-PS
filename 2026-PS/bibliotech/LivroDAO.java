@@ -12,7 +12,7 @@ public class LivroDAO {
         return adicionarLivro(titulo, autor, ano, null);
     }
 
-    // Novo método com suporte à capa
+    // Novo método com suporte à capa e propagação de PersistenciaException
     public boolean adicionarLivro(String titulo, String autor, int ano, String capa) {
         String sql = "INSERT INTO livros (titulo, autor, ano, capa) VALUES (?, ?, ?, ?)";
 
@@ -28,8 +28,29 @@ public class LivroDAO {
             return linhas > 0;
 
         } catch (SQLException e) {
-            System.out.println("Erro ao adicionar livro: " + e.getMessage());
+            throw new PersistenciaException("Não foi possível adicionar o livro.", e);
+        }
+    }
+
+    // Desafio 1: Verifica se já existe um livro com o mesmo título e autor
+    public boolean existeLivro(String titulo, String autor) {
+        String sql = "SELECT COUNT(*) FROM livros WHERE LOWER(TRIM(titulo)) = LOWER(TRIM(?)) AND LOWER(TRIM(autor)) = LOWER(TRIM(?))";
+
+        try (Connection conexao = Conexao.conectar();
+             PreparedStatement comando = conexao.prepareStatement(sql)) {
+
+            comando.setString(1, titulo);
+            comando.setString(2, autor);
+
+            try (ResultSet resultado = comando.executeQuery()) {
+                if (resultado.next()) {
+                    return resultado.getInt(1) > 0;
+                }
+            }
             return false;
+
+        } catch (SQLException e) {
+            throw new PersistenciaException("Não foi possível verificar duplicidade do livro.", e);
         }
     }
 
@@ -55,8 +76,7 @@ public class LivroDAO {
             return linhas > 0;
 
         } catch (SQLException e) {
-            System.out.println("Erro ao atualizar livro: " + e.getMessage());
-            return false;
+            throw new PersistenciaException("Não foi possível atualizar o livro.", e);
         }
     }
 
@@ -71,8 +91,7 @@ public class LivroDAO {
             return linhas > 0;
 
         } catch (SQLException e) {
-            System.out.println("Erro ao excluir livro: " + e.getMessage());
-            return false;
+            throw new PersistenciaException("Não foi possível excluir o livro.", e);
         }
     }
 
@@ -95,7 +114,7 @@ public class LivroDAO {
             }
 
         } catch (SQLException e) {
-            System.out.println("Erro ao listar livros: " + e.getMessage());
+            throw new PersistenciaException("Não foi possível consultar os livros.", e);
         }
 
         return livros;
@@ -121,7 +140,7 @@ public class LivroDAO {
             }
 
         } catch (SQLException e) {
-            System.out.println("Erro ao buscar livro por ID: " + e.getMessage());
+            throw new PersistenciaException("Não foi possível buscar o livro por ID.", e);
         }
 
         return null;
